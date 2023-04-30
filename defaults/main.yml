@@ -27,6 +27,7 @@ var_password_pam_ocredit: '-1'
 var_password_pam_retry: '3'
 var_password_pam_ucredit: '-1'
 var_password_hashing_algorithm: SHA512
+var_password_hashing_rounds: 5000
 var_account_disable_post_pw_expiration: '35'
 var_accounts_maximum_age_login_defs: '60'
 var_accounts_minimum_age_login_defs: '1'
@@ -38,6 +39,7 @@ var_auditd_disk_full_action: syslog|single|halt
 var_auditd_action_mail_acct: root
 var_auditd_space_left_action: email
 var_auditd_space_left_percentage: '25'
+var_usbguard_auditbackend: 'LinuxAudit'
 rsyslog_remote_loghost_address: logcollector
 sysctl_net_ipv6_conf_all_accept_ra_value: '0'
 sysctl_net_ipv6_conf_all_accept_redirects_value: '0'
@@ -73,6 +75,7 @@ DISA_STIG_RHEL_08_010050: true
 DISA_STIG_RHEL_08_010060: true
 DISA_STIG_RHEL_08_010070: true
 DISA_STIG_RHEL_08_010110: true
+DISA_STIG_RHEL_08_010130: true
 DISA_STIG_RHEL_08_010151: true
 DISA_STIG_RHEL_08_010152: true
 DISA_STIG_RHEL_08_010159: true
@@ -155,6 +158,7 @@ DISA_STIG_RHEL_08_010672: true
 DISA_STIG_RHEL_08_010673: true
 DISA_STIG_RHEL_08_010674: true
 DISA_STIG_RHEL_08_010675: true
+DISA_STIG_RHEL_08_010680: true
 DISA_STIG_RHEL_08_010700: true
 DISA_STIG_RHEL_08_010720: true
 DISA_STIG_RHEL_08_010730: true
@@ -179,6 +183,7 @@ DISA_STIG_RHEL_08_020032: true
 DISA_STIG_RHEL_08_020039: true
 DISA_STIG_RHEL_08_020040: true
 DISA_STIG_RHEL_08_020041: true
+DISA_STIG_RHEL_08_020042: true
 DISA_STIG_RHEL_08_020050: true
 DISA_STIG_RHEL_08_020060: true
 DISA_STIG_RHEL_08_020070: true
@@ -194,12 +199,14 @@ DISA_STIG_RHEL_08_020140: true
 DISA_STIG_RHEL_08_020150: true
 DISA_STIG_RHEL_08_020160: true
 DISA_STIG_RHEL_08_020170: true
+DISA_STIG_RHEL_08_020180: true
 DISA_STIG_RHEL_08_020190: true
 DISA_STIG_RHEL_08_020200: true
 DISA_STIG_RHEL_08_020210: true
 DISA_STIG_RHEL_08_020220: true
 DISA_STIG_RHEL_08_020221: true
 DISA_STIG_RHEL_08_020230: true
+DISA_STIG_RHEL_08_020231: true
 DISA_STIG_RHEL_08_020250: true
 DISA_STIG_RHEL_08_020260: true
 DISA_STIG_RHEL_08_020280: true
@@ -267,9 +274,11 @@ DISA_STIG_RHEL_08_030550: true
 DISA_STIG_RHEL_08_030560: true
 DISA_STIG_RHEL_08_030570: true
 DISA_STIG_RHEL_08_030580: true
+DISA_STIG_RHEL_08_030590: true
 DISA_STIG_RHEL_08_030600: true
 DISA_STIG_RHEL_08_030601: true
 DISA_STIG_RHEL_08_030602: true
+DISA_STIG_RHEL_08_030603: true
 DISA_STIG_RHEL_08_030610: true
 DISA_STIG_RHEL_08_030620: true
 DISA_STIG_RHEL_08_030630: true
@@ -291,6 +300,7 @@ DISA_STIG_RHEL_08_040001: true
 DISA_STIG_RHEL_08_040002: true
 DISA_STIG_RHEL_08_040004: true
 DISA_STIG_RHEL_08_040010: true
+DISA_STIG_RHEL_08_040020: true
 DISA_STIG_RHEL_08_040021: true
 DISA_STIG_RHEL_08_040022: true
 DISA_STIG_RHEL_08_040023: true
@@ -299,6 +309,7 @@ DISA_STIG_RHEL_08_040025: true
 DISA_STIG_RHEL_08_040026: true
 DISA_STIG_RHEL_08_040070: true
 DISA_STIG_RHEL_08_040080: true
+DISA_STIG_RHEL_08_040090: true
 DISA_STIG_RHEL_08_040100: true
 DISA_STIG_RHEL_08_040101: true
 DISA_STIG_RHEL_08_040110: true
@@ -384,6 +395,7 @@ accounts_password_pam_pwquality_system_auth: true
 accounts_password_pam_retry: true
 accounts_password_pam_ucredit: true
 accounts_password_set_max_life_existing: true
+accounts_password_set_min_life_existing: true
 accounts_passwords_pam_faillock_audit: true
 accounts_passwords_pam_faillock_deny: true
 accounts_passwords_pam_faillock_deny_root: true
@@ -433,6 +445,7 @@ audit_rules_kernel_module_loading_delete: true
 audit_rules_kernel_module_loading_finit: true
 audit_rules_kernel_module_loading_init: true
 audit_rules_login_events_lastlog: true
+audit_rules_login_events_faillock: true
 audit_rules_media_export: true
 audit_rules_privileged_commands_chage: true
 audit_rules_privileged_commands_chsh: true
@@ -657,8 +670,12 @@ service_sshd_enabled: true
 service_systemd_coredump_disabled: true
 service_usbguard_enabled: true
 set_password_hashing_algorithm_logindefs: true
+set_password_min_length_logindefs: true
 set_password_hashing_algorithm_passwordauth: true
 set_password_hashing_algorithm_systemauth: true
+set_password_hashing_rounds_logindefs: true
+set_usbguard_auditbackend_usbguard_daemonconf: true
+set_tmux_remove_shells: true
 skip_ansible_lint: true
 sshd_disable_empty_passwords: true
 sshd_disable_gssapi_auth: true

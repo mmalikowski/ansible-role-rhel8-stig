@@ -13470,7 +13470,7 @@
   ansible.builtin.find:
     paths: /etc
     patterns: bashrc
-    contains: .*case "$name" in sshd|login) tmux ;; esac.*
+    contains: .*case "$name" in (sshd|login) tmux ;; esac.*
   register: tmux_in_bashrc
   when:
   - DISA_STIG_RHEL_08_020041 | bool
@@ -13495,7 +13495,7 @@
   ansible.builtin.find:
     paths: /etc/profile.d
     patterns: '*.sh'
-    contains: .*case "$name" in sshd|login) tmux ;; esac.*
+    contains: .*case "$name" in (sshd|login) tmux ;; esac.*
   register: tmux_in_profile_d
   when:
   - DISA_STIG_RHEL_08_020041 | bool
@@ -13519,7 +13519,7 @@
 - name: 'Support session locking with tmux (not enforcing): Insert the correct script into /etc/profile.d/tmux.sh'
   ansible.builtin.blockinfile:
     path: /etc/profile.d/tmux.sh
-    block: "if [ \"$PS1\" ]; then\n  parent=$(ps -o ppid= -p $$)\n  name=$(ps -o comm= -p $parent)\n  case \"$name\" in sshd|login)\
+    block: "if [ \"$PS1\" ]; then\n  parent=$(ps -o ppid= -p $$)\n  name=$(ps -o comm= -p $parent)\n  case \"$name\" in (sshd|login)\
       \ tmux ;; esac\nfi\n"
     create: true
   when:
@@ -36375,8 +36375,7 @@
 - name: Get all world-writable directories with no sticky bits set
   shell: 'set -o pipefail
 
-    df --local -P | awk ''{if (NR!=1) print $6}'' | xargs -I ''{}'' find ''{}'' -xdev -type d \( -perm -0002 -a ! -perm -1000
-    \) 2>/dev/null
+    df --local -P | awk ''NR!=1{ print $6 }'' | xargs -I ''{}'' find ''{}'' -xdev -type d \( -perm -0002 -a ! -perm -1000 \) 2>/dev/null
 
     '
   register: dir_output
@@ -45622,3 +45621,742 @@
   - reboot_required
   - restrict_strategy
   - xwindows_runlevel_target
+
+- name: Gather the package facts
+  package_facts:
+    manager: auto
+  tags:
+  - DISA-STIG-RHEL-08-010130
+  - NIST-800-53-IA-5(1)(c)
+  - NIST-800-53-IA-5(1)
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+  - restrict_strategy
+  - set_password_hashing_rounds_logindefs
+  when:
+  - DISA_STIG_RHEL_08_010130 | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+  - set_password_hashing_rounds_logindefs | bool
+
+- name: Set Password Hashing Rounds in /etc/login.defs
+  lineinfile:
+    dest: /etc/login.defs
+    regexp: ^#?SHA_CRYPT_MIN_ROUNDS
+    line: SHA_CRYPT_MIN_ROUNDS {{ var_password_hashing_rounds }}
+    state: present
+    create: true
+  when:
+  - DISA_STIG_RHEL_08_010130 | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+  - set_password_hashing_rounds_logindefs | bool
+  - '"shadow-utils" in ansible_facts.packages'
+  tags:
+  - DISA-STIG-RHEL-08-010130
+  - NIST-800-53-IA-5(1)(c)
+  - NIST-800-53-IA-5(1)
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+  - restrict_strategy
+  - set_password_hashing_rounds_logindefs
+
+- name: Gather Package Facts
+  package_facts:
+    manager: auto
+  tags:
+  - DISA-STIG-RHEL-08-010130
+  - NIST-800-53-AC-11(b)
+  - NIST-800-53-AC-11.1
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+  - restrict_strategy
+  - set_tmux_remove_shells
+  when:
+  - DISA_STIG_RHEL_08_020042 | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+  - set_tmux_remove_shells | bool
+
+- name: Remove instances of tmux from /etc/shells
+  lineinfile:
+    dest: /etc/shells
+    regexp: ^#?.*tmux
+    state: absent
+  when:
+  - DISA_STIG_RHEL_08_020042 | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+  - set_tmux_remove_shells | bool
+  - '"tmux" in ansible_facts.packages'
+  tags:
+  - DISA-STIG-RHEL-08-020042
+  - NIST-800-53-AC-11(b)
+  - NIST-800-53-IA-11.1
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+  - restrict_strategy
+  - set_tmux_remove_shells
+
+- name: Collect user names with incorrect minimum time between password changes
+  ansible.builtin.command:
+    cmd: awk -F':' '(/^[^:]+:[^!*]/ && ($4 < {{ var_accounts_minimum_age_login_defs }} || $5 == "")) {print $1}' /etc/shadow
+  register: user_names
+  tags:
+  - DISA-STIG-RHEL-08-020180
+  - NIST-800-53-IA-5(1)(d)
+  - accounts_password_set_min_life_existing
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+  - restrict_strategy
+  when:
+  - DISA_STIG_RHEL_08_020180 | bool
+  - accounts_password_set_min_life_existing | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+
+- name: Change the minimum time period between password changes
+  ansible.builtin.user:
+    user: '{{ item }}'
+    password_expire_min: '{{ var_accounts_minimum_age_login_defs }}'
+  with_items: '{{ user_names.stdout_lines }}'
+  when:
+  - DISA_STIG_RHEL_08_020180 | bool
+  - accounts_password_set_min_life_existing | bool
+  - user_names.stdout_lines | length > 0
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+  tags:
+  - DISA-STIG-RHEL-08-020180
+  - NIST-800-53-IA-5(1)(d)
+  - accounts_password_set_min_life_existing
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+  - restrict_strategy
+
+- name: Gather the package facts
+  package_facts:
+    manager: auto
+  tags:
+  - DISA-STIG-RHEL-08-020231
+  - NIST-800-53-IA-5(1)(a)
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+  - restrict_strategy
+  - set_password_min_length_logindefs
+  when:
+  - DISA_STIG_RHEL_08_020231 | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+  - set_password_min_length_logindefs | bool
+
+- name: Set Password Hashing Rounds in /etc/login.defs
+  lineinfile:
+    dest: /etc/login.defs
+    regexp: ^#?PASS_MIN_LEN
+    line: PASS_MIN_LEN {{ var_password_pam_minlen }}
+    state: present
+    create: true
+  when:
+  - DISA_STIG_RHEL_08_020231 | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+  - set_password_min_length_logindefs | bool
+  - '"shadow-utils" in ansible_facts.packages'
+  tags:
+  - DISA-STIG-RHEL-08-020231
+  - NIST-800-53-IA-5(1)(a)
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+  - restrict_strategy
+  - set_password_min_length_logindefs
+
+- name: Gather the package facts
+  package_facts:
+    manager: auto
+  tags:
+  - DISA-STIG-RHEL-08-030590
+  - NIST-800-53-AU-12(a)
+  - audit_rules_login_events_faillock
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - reboot_required
+  - restrict_strategy
+  when:
+  - DISA_STIG_RHEL_08_030590 | bool
+  - audit_rules_login_events_faillock | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - reboot_required | bool
+  - restrict_strategy | bool
+
+- name: Check if watch rule for /var/log/faillock already exists in /etc/audit/rules.d/
+  find:
+    paths: /etc/audit/rules.d
+    contains: ^\s*-w\s+/var/log/faillock\s+-p\s+wa(\s|$)+
+    patterns: '*.rules'
+  register: find_existing_watch_rules_d
+  when:
+  - DISA_STIG_RHEL_08_030590 | bool
+  - audit_rules_login_events_faillock | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - reboot_required | bool
+  - restrict_strategy | bool
+  - '"audit" in ansible_facts.packages'
+  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  tags:
+  - DISA-STIG-RHEL-08-030590
+  - NIST-800-53-AU-12(a)
+  - audit_rules_login_events_faillock
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - reboot_required
+  - restrict_strategy
+
+- name: Search /etc/audit/rules.d for other rules with specified key logins
+  find:
+    paths: /etc/audit/rules.d
+    contains: ^.*(?:-F key=|-k\s+)logins$
+    patterns: '*.rules'
+  register: find_watch_key
+  when:
+  - DISA_STIG_RHEL_08_030590 | bool
+  - audit_rules_login_events_faillock | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - reboot_required | bool
+  - restrict_strategy | bool
+  - '"audit" in ansible_facts.packages'
+  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - find_existing_watch_rules_d.matched is defined and find_existing_watch_rules_d.matched == 0
+  tags:
+  - DISA-STIG-RHEL-08-030590
+  - NIST-800-53-AU-12(a)
+  - audit_rules_login_events_faillock
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - reboot_required
+  - restrict_strategy
+
+- name: Use /etc/audit/rules.d/logins.rules as the recipient for the rule
+  set_fact:
+    all_files:
+    - /etc/audit/rules.d/logins.rules
+  when:
+  - DISA_STIG_RHEL_08_030590 | bool
+  - audit_rules_login_events_faillock | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - reboot_required | bool
+  - restrict_strategy | bool
+  - '"audit" in ansible_facts.packages'
+  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - find_watch_key.matched is defined and find_watch_key.matched == 0 and find_existing_watch_rules_d.matched is defined and
+    find_existing_watch_rules_d.matched == 0
+  tags:
+  - DISA-STIG-RHEL-08-030590
+  - NIST-800-53-AU-12(a)
+  - audit_rules_login_events_faillock
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - reboot_required
+  - restrict_strategy
+
+- name: Use matched file as the recipient for the rule
+  set_fact:
+    all_files:
+    - '{{ find_watch_key.files | map(attribute=''path'') | list | first }}'
+  when:
+  - DISA_STIG_RHEL_08_030590 | bool
+  - audit_rules_login_events_faillock | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - reboot_required | bool
+  - restrict_strategy | bool
+  - '"audit" in ansible_facts.packages'
+  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - find_watch_key.matched is defined and find_watch_key.matched > 0 and find_existing_watch_rules_d.matched is defined and
+    find_existing_watch_rules_d.matched == 0
+  tags:
+  - DISA-STIG-RHEL-08-030590
+  - NIST-800-53-AU-12(a)
+  - audit_rules_login_events_faillock
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - reboot_required
+  - restrict_strategy
+
+- name: Add watch rule for /var/log/faillock in /etc/audit/rules.d/
+  lineinfile:
+    path: '{{ all_files[0] }}'
+    line: -w /var/log/faillock -p wa -k logins
+    create: true
+    mode: '0640'
+  when:
+  - DISA_STIG_RHEL_08_030590 | bool
+  - audit_rules_login_events_faillock | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - reboot_required | bool
+  - restrict_strategy | bool
+  - '"audit" in ansible_facts.packages'
+  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - find_existing_watch_rules_d.matched is defined and find_existing_watch_rules_d.matched == 0
+  tags:
+  - DISA-STIG-RHEL-08-030590
+  - NIST-800-53-AU-12(a)
+  - audit_rules_login_events_faillock
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - reboot_required
+  - restrict_strategy
+
+- name: Check if watch rule for /var/log/faillock already exists in /etc/audit/audit.rules
+  find:
+    paths: /etc/audit/
+    contains: ^\s*-w\s+/var/log/faillock\s+-p\s+wa(\s|$)+
+    patterns: audit.rules
+  register: find_existing_watch_audit_rules
+  when:
+  - DISA_STIG_RHEL_08_030590 | bool
+  - audit_rules_login_events_faillock | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - reboot_required | bool
+  - restrict_strategy | bool
+  - '"audit" in ansible_facts.packages'
+  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  tags:
+  - DISA-STIG-RHEL-08-030590
+  - NIST-800-53-AU-12(a)
+  - audit_rules_login_events_faillock
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - reboot_required
+  - restrict_strategy
+
+- name: Add watch rule for /var/log/faillock in /etc/audit/audit.rules
+  lineinfile:
+    line: -w /var/log/faillock -p wa -k logins
+    state: present
+    dest: /etc/audit/audit.rules
+    create: true
+    mode: '0640'
+  when:
+  - DISA_STIG_RHEL_08_030590 | bool
+  - audit_rules_login_events_faillock | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - reboot_required | bool
+  - restrict_strategy | bool
+  - '"audit" in ansible_facts.packages'
+  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - find_existing_watch_audit_rules.matched is defined and find_existing_watch_audit_rules.matched == 0
+  tags:
+  - DISA-STIG-RHEL-08-030590
+  - NIST-800-53-AU-12(a)
+  - audit_rules_login_events_faillock
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - reboot_required
+  - restrict_strategy
+
+- name: Gather the package facts
+  package_facts:
+    manager: auto
+  tags:
+  - DISA-STIG-RHEL-08-030603
+  - NIST-800-53-AU-12(a)
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+  - restrict_strategy
+  - set_usbguard_auditbackend_usbguard_daemonconf
+  when:
+  - DISA_STIG_RHEL_08_030603 | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+  - set_usbguard_auditbackend_usbguard_daemonconf | bool
+
+- name: Set AuditBackend in /etc/usbguard/usbguard-daemon.conf
+  lineinfile:
+    dest: /etc/usbguard/usbguard-daemon.conf
+    regexp: ^#?AuditBackend
+    line: AuditBackend={{ var_usbguard_auditbackend }}
+    state: present
+    create: true
+  when:
+  - DISA_STIG_RHEL_08_030603 | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+  - set_usbguard_auditbackend_usbguard_daemonconf | bool
+  - '"usbguard" in ansible_facts.packages'
+  tags:
+  - DISA-STIG-RHEL-08-030603
+  - NIST-800-53-AU-12(a)
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+  - restrict_strategy
+  - set_usbguard_auditbackend_usbguard_daemonconf
+
+- name: Ensure kernel module 'uvcvideo' is disabled
+  lineinfile:
+    create: true
+    dest: /etc/modprobe.d/uvcvideo.conf
+    regexp: ^#?install uvcvideo
+    line: install uvcvideo /bin/true
+  when:
+  - DISA_STIG_RHEL_08_040020 | bool
+  - disable_strategy | bool
+  - low_complexity | bool
+  - medium_disruption | bool
+  - medium_severity | bool
+  - reboot_required | bool
+  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  tags:
+  - DISA-STIG-RHEL-08-040020
+  - NIST-800-53-CM-7
+  - disable_strategy
+  - kernel_module_uvcvideo_disabled
+  - low_complexity
+  - medium_disruption
+  - medium_severity
+  - reboot_required
+
+- name: Ensure kernel module 'uvcvideo' is blacklisted
+  lineinfile:
+    create: true
+    dest: /etc/modprobe.d/uvcvideo.conf
+    regexp: ^blacklist uvcvideo$
+    line: blacklist uvcvideo
+  when:
+  - DISA_STIG_RHEL_08_040020 | bool
+  - disable_strategy | bool
+  - low_complexity | bool
+  - medium_disruption | bool
+  - medium_severity | bool
+  - reboot_required | bool
+  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  tags:
+  - DISA-STIG-RHEL-08-040020
+  - NIST-800-53-CM-7
+  - disable_strategy
+  - kernel_module_uvcvideo_disabled
+  - low_complexity
+  - medium_disruption
+  - medium_severity
+  - reboot_required
+
+- name: Ensure the public firewalld zone is configured to DROP by default
+  firewalld:
+    zone: public
+    target: DROP
+    permanent: true
+    state: present
+  register: firewall_change
+  when:
+  - DISA_STIG_RHEL_08_040090 | bool
+  - disable_strategy | bool
+  - low_complexity | bool
+  - medium_disruption | bool
+  - medium_severity | bool
+  - reboot_required | bool
+  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  tags:
+  - DISA-STIG-RHEL-08-040090
+  - NIST-800-53-AC-17(1)
+  - disable_strategy
+  - firewalld_default_drop
+  - low_complexity
+  - medium_disruption
+  - medium_severity
+  - no_reboot_needed
+
+- name: reload firewalld
+  systemd:
+    name: firewalld
+    state: reloaded
+  when:
+  - DISA_STIG_RHEL_08_040090 | bool
+  - firewall_change.changed
+  - disable_strategy | bool
+  - low_complexity | bool
+  - medium_disruption | bool
+  - medium_severity | bool
+  - reboot_required | bool
+  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  tags:
+  - DISA-STIG-RHEL-08-040090
+  - NIST-800-53-AC-17(1)
+  - disable_strategy
+  - firewalld_default_drop
+  - low_complexity
+  - medium_disruption
+  - medium_severity
+  - no_reboot_needed
+
+- name: Gather the package facts
+  package_facts:
+    manager: auto
+  when:
+  - DISA_STIG_RHEL_08_010680 | bool
+  - disable_strategy | bool
+  - low_complexity | bool
+  - medium_disruption | bool
+  - medium_severity | bool
+  - reboot_required | bool
+  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  tags:
+  - DISA-STIG-RHEL-08-010680
+  - NIST-800-53-CM-6(b)
+  - disable_strategy
+  - nsswitch_remove_dns
+  - low_complexity
+  - medium_disruption
+  - medium_severity
+  - reboot_required
+
+- name: Ensure DNS is removed from nsswitch.conf - Check if /etc/nsswitch.conf file is present
+  ansible.builtin.stat:
+    path: /etc/nsswitch.conf
+  register: result_pam_file_present
+  when:
+  - DISA_STIG_RHEL_08_010680 | bool
+  - disable_strategy | bool
+  - low_complexity | bool
+  - medium_disruption | bool
+  - medium_severity | bool
+  - reboot_required | bool
+  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - '"pam" in ansible_facts.packages'
+  tags:
+  - DISA-STIG-RHEL-08-010680
+  - NIST-800-53-CM-6(b)
+  - disable_strategy
+  - nsswitch_remove_dns
+  - low_complexity
+  - medium_disruption
+  - medium_severity
+  - reboot_required
+
+- name: Ensure DNS is removed from nsswitch.conf - Check the proper remediation for the system
+  block:
+  - name: Ensure DNS is removed from nsswitch.conf - Define the PAM file to be edited as a local fact
+    ansible.builtin.set_fact:
+      pam_file_path: /etc/nsswitch.conf
+  - name: Ensure DNS is removed from nsswitch.conf - Check if system relies on authselect tool
+    ansible.builtin.stat:
+      path: /usr/bin/authselect
+    register: result_authselect_present
+  - name: Ensure DNS is removed from nsswitch.conf - Ensure authselect custom profile is used if authselect is present
+    block:
+    - name: Ensure DNS is removed from nsswitch.conf - Check integrity of authselect current profile
+      ansible.builtin.command:
+        cmd: authselect check
+      register: result_authselect_check_cmd
+      changed_when: false
+      ignore_errors: true
+    - name: Ensure DNS is removed from nsswitch.conf - Informative message based on the authselect integrity check
+        result
+      ansible.builtin.assert:
+        that:
+        - result_authselect_check_cmd is success
+        fail_msg:
+        - authselect integrity check failed. Remediation aborted!
+        - This remediation could not be applied because an authselect profile was not selected or the selected profile is
+          not intact.
+        - It is not recommended to manually edit the PAM files when authselect tool is available.
+        - In cases where the default authselect profile does not cover a specific demand, a custom authselect profile is recommended.
+        success_msg:
+        - authselect integrity check passed
+    - name: Ensure DNS is removed from nsswitch.conf - Get authselect current profile
+      ansible.builtin.shell:
+        cmd: authselect current -r | awk '{ print $1 }'
+      register: result_authselect_profile
+      changed_when: false
+      when:
+      - result_authselect_check_cmd is success
+    - name: Ensure DNS is removed from nsswitch.conf - Define the current authselect profile as a local fact
+      ansible.builtin.set_fact:
+        authselect_current_profile: '{{ result_authselect_profile.stdout }}'
+        authselect_custom_profile: '{{ result_authselect_profile.stdout }}'
+      when:
+      - result_authselect_profile is not skipped
+      - result_authselect_profile.stdout is match("custom/")
+    - name: Ensure DNS is removed from nsswitch.conf - Define the new authselect custom profile as a local fact
+      ansible.builtin.set_fact:
+        authselect_current_profile: '{{ result_authselect_profile.stdout }}'
+        authselect_custom_profile: custom/hardening
+      when:
+      - result_authselect_profile is not skipped
+      - result_authselect_profile.stdout is not match("custom/")
+    - name: Ensure DNS is removed from nsswitch.conf - Get authselect current features to also enable them in the
+        custom profile
+      ansible.builtin.shell:
+        cmd: authselect current | tail -n+3 | awk '{ print $2 }'
+      register: result_authselect_features
+      changed_when: false
+      when:
+      - result_authselect_profile is not skipped
+      - authselect_current_profile is not match("custom/")
+    - name: Ensure DNS is removed from nsswitch.conf - Check if any custom profile with the same name was already
+        created
+      ansible.builtin.stat:
+        path: /etc/authselect/{{ authselect_custom_profile }}
+      register: result_authselect_custom_profile_present
+      changed_when: false
+      when:
+      - authselect_current_profile is not match("custom/")
+    - name: Ensure DNS is removed from nsswitch.conf - Create an authselect custom profile based on the current
+        profile
+      ansible.builtin.command:
+        cmd: authselect create-profile hardening -b {{ authselect_current_profile }}
+      when:
+      - result_authselect_check_cmd is success
+      - authselect_current_profile is not match("custom/")
+      - not result_authselect_custom_profile_present.stat.exists
+    - name: Ensure DNS is removed from nsswitch.conf - Ensure authselect changes are applied
+      ansible.builtin.command:
+        cmd: authselect apply-changes -b --backup=before-hardening-custom-profile
+      when:
+      - result_authselect_check_cmd is success
+      - result_authselect_profile is not skipped
+      - authselect_current_profile is not match("custom/")
+      - authselect_custom_profile is not match(authselect_current_profile)
+    - name: Ensure DNS is removed from nsswitch.conf - Ensure the authselect custom profile is selected
+      ansible.builtin.command:
+        cmd: authselect select {{ authselect_custom_profile }}
+      register: result_pam_authselect_select_profile
+      when:
+      - result_authselect_check_cmd is success
+      - result_authselect_profile is not skipped
+      - authselect_current_profile is not match("custom/")
+      - authselect_custom_profile is not match(authselect_current_profile)
+    - name: Ensure DNS is removed from nsswitch.conf - Restore the authselect features in the custom profile
+      ansible.builtin.command:
+        cmd: authselect enable-feature {{ item }}
+      loop: '{{ result_authselect_features.stdout_lines }}'
+      register: result_pam_authselect_restore_features
+      when:
+      - result_authselect_profile is not skipped
+      - result_authselect_features is not skipped
+      - result_pam_authselect_select_profile is not skipped
+    - name: Ensure DNS is removed from nsswitch.conf - Ensure authselect changes are applied
+      ansible.builtin.command:
+        cmd: authselect apply-changes -b --backup=after-hardening-custom-profile
+      when:
+      - result_authselect_check_cmd is success
+      - result_authselect_profile is not skipped
+      - result_pam_authselect_restore_features is not skipped
+    - name: Ensure DNS is removed from nsswitch.conf - Change the PAM file to be edited according to the custom
+        authselect profile
+      ansible.builtin.set_fact:
+        pam_file_path: /etc/authselect/{{ authselect_custom_profile }}/{{ pam_file_path | basename }}
+    when:
+    - result_authselect_present.stat.exists
+  - name: Ensure the nsswitch file in the selected profile allows for hosts entry editing
+    lineinfile:
+      dest: '{{ pam_file_path }}'
+      regex: ^hosts
+      line: 'hosts:      files dns myhostname                        {exclude if "with-custom-hosts"}'
+      create: true
+      state: present
+  - name: Ensure DNS is removed from nsswitch.conf - Ensure the dns option is removed
+      in {{ pam_file_path }}
+    ansible.builtin.replace:
+      dest: '{{ pam_file_path }}'
+      regexp: '^hosts(.*)dns (.*)$'
+      replace: 'hosts\1\2'
+    register: result_pam_option_removal
+  
+  - name: Ensure DNS is removed from nsswitch.conf - Ensure authselect changes are applied
+    ansible.builtin.command:
+      cmd: authselect apply-changes -b
+    when:
+    - result_authselect_present.stat.exists
+    - result_pam_option_removal is changed
+  when:
+  - DISA_STIG_RHEL_08_010680 | bool
+  - disable_strategy | bool
+  - low_complexity | bool
+  - medium_disruption | bool
+  - medium_severity | bool
+  - reboot_required | bool
+  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - '"pam" in ansible_facts.packages'
+  tags:
+  - DISA-STIG-RHEL-08-010680
+  - NIST-800-53-CM-6(b)
+  - disable_strategy
+  - nsswitch_remove_dns
+  - low_complexity
+  - medium_disruption
+  - medium_severity
+  - reboot_required
+
